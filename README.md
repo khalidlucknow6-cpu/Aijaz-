@@ -252,3 +252,72 @@ function addSale() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+let total = 0;
+let invoiceNumber = 1; // Auto-increment invoice number
+
+function addSale() {
+    let name = document.getElementById("customer").value;
+    let mobile = document.getElementById("mobile").value;
+    let helmet = document.getElementById("helmet").value;
+    let cost = parseFloat(document.getElementById("cost").value);
+    let sale = parseFloat(document.getElementById("sale").value);
+
+    if (!name || !mobile || !helmet || !cost || !sale) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    let profit = sale - cost;
+    total += profit;
+
+    // Add sale to table
+    let row = `<tr>
+        <td>${name}</td>
+        <td>${mobile}</td>
+        <td>${helmet}</td>
+        <td>₹ ${profit}</td>
+        <td><button onclick="downloadInvoice('${name}','${mobile}','${helmet}',${sale},${profit},${invoiceNumber})">Download Invoice</button></td>
+    </tr>`;
+    document.getElementById("data").innerHTML += row;
+    document.getElementById("totalProfit").innerText = total;
+
+    // Clear input fields
+    document.getElementById("customer").value = "";
+    document.getElementById("mobile").value = "";
+    document.getElementById("helmet").value = "";
+    document.getElementById("cost").value = "";
+    document.getElementById("sale").value = "";
+
+    invoiceNumber++; // Increment invoice number for next sale
+}
+
+// Function to download invoice as PDF
+function downloadInvoice(customerName, mobile, helmet, salePrice, profit, invoiceNo) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const today = new Date();
+    const date = today.toLocaleDateString();
+    const time = today.toLocaleTimeString();
+
+    doc.setFontSize(18);
+    doc.text("Studio Helmet", 105, 20, null, null, "center");
+    doc.setFontSize(12);
+    doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
+    doc.text(`Invoice No: ${invoiceNo}`, 14, 40);
+    doc.text(`Date: ${date} Time: ${time}`, 14, 48);
+
+    doc.text(`Customer: ${customerName}`, 14, 60);
+    doc.text(`Mobile: ${mobile}`, 14, 68);
+    doc.text(`Helmet Model: ${helmet}`, 14, 76);
+    doc.text(`Sale Price: ₹${salePrice}`, 14, 84);
+    doc.text(`Profit: ₹${profit}`, 14, 92);
+
+    doc.setFontSize(10);
+    doc.text("Thank you for shopping with Studio Helmet!", 105, 110, null, null, "center");
+
+    doc.save(`Invoice_${invoiceNo}.pdf`);
+}
+</script>
