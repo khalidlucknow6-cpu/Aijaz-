@@ -35,7 +35,10 @@ index.html
         table {
             width: 100%;
             margin-top: 10px;
-            border-collapse: collapse;
+            border-collapse: 
+             <button onclick="downloadInvoice('Ahmed','9876543210','Vega X',2000,300,1)">
+Download Invoice
+</button>   collapse;
         }
         table, th, td {
             border: 1px solid #ccc;
