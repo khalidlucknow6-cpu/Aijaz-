@@ -4,57 +4,20 @@
     <title>Studio Helmet - Aijaz Ahmed</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
-            font-family: Arial;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-        }
-        .box {
-            background: white;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #ccc;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 8px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background: black;
-            color: white;
-            font-weight: bold;
-        }
-        table {
-            width: 100%;
-            margin-top: 10px;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-        }
-        th {
-            background: #eee;
-        }
-        .profit {
-            font-weight: bold;
-            color: green;
-        }
+        body { font-family: Arial; padding:20px; background:#f4f4f4; }
+        .box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
+        input, button { width:100%; padding:8px; margin-top:8px; }
+        button { background:black; color:white; border:none; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        table, th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+        th { background:#eee; }
     </style>
 </head>
 
 <body>
 
-<h1>Studio Helmet</h1>
-<p style="text-align:center;">Owner: Aijaz Ahmed</p>
+<h2>Studio Helmet</h2>
+<p>Owner: Aijaz Ahmed</p>
 
 <div class="box">
     <h3>Add Sale</h3>
@@ -73,8 +36,9 @@
             <tr>
                 <th>Name</th>
                 <th>Mobile</th>
-                <th>Model</th>
+                <th>Helmet</th>
                 <th>Profit</th>
+                <th>Invoice</th>
             </tr>
         </thead>
         <tbody id="data"></tbody>
@@ -83,44 +47,84 @@
 
 <div class="box">
     <h3>Total Profit</h3>
-    <p class="profit">₹ <span id="totalProfit">0</span></p>
+    ₹ <span id="totalProfit">0</span>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
-let total = 0;
+let totalProfit = 0;
+let invoiceNumber = 1;
 
 function addSale() {
-    let name = document.getElementById("customer").value;
-    let mobile = document.getElementById("mobile").value;
-    let helmet = document.getElementById("helmet").value;
-    let cost = parseFloat(document.getElementById("cost").value);
-    let sale = parseFloat(document.getElementById("sale").value);
+    const name = document.getElementById("customer").value.trim();
+    const mobile = document.getElementById("mobile").value.trim();
+    const helmet = document.getElementById("helmet").value.trim();
+    const cost = parseFloat(document.getElementById("cost").value);
+    const sale = parseFloat(document.getElementById("sale").value);
 
-    if (!name || !mobile || !helmet || !cost || !sale) {
-        alert("Please fill all fields");
+    if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
+        alert("Please fill all fields correctly!");
         return;
     }
 
-    let profit = sale - cost;
-    total += profit;
+    const profit = sale - cost;
+    totalProfit += profit;
 
-    let row = `<tr>
-        <td>${name}</td>
-        <td>${mobile}</td>
-        <td>${helmet}</td>
-        <td>₹ ${profit}</td>
-    </tr>`;
+    const row = `
+        <tr>
+            <td>${name}</td>
+            <td>${mobile}</td>
+            <td>${helmet}</td>
+            <td>₹ ${profit}</td>
+            <td>
+                <button onclick="downloadInvoice('${name}','${mobile}','${helmet}',${sale},${profit},${invoiceNumber})">
+                Download Invoice
+                </button>
+            </td>
+        </tr>
+    `;
 
     document.getElementById("data").innerHTML += row;
-    document.getElementById("totalProfit").innerText = total;
+    document.getElementById("totalProfit").innerText = totalProfit;
 
     document.getElementById("customer").value = "";
     document.getElementById("mobile").value = "";
     document.getElementById("helmet").value = "";
     document.getElementById("cost").value = "";
     document.getElementById("sale").value = "";
+
+    invoiceNumber++;
+}
+
+function downloadInvoice(customerName, mobile, helmet, salePrice, profit, invoiceNo) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const now = new Date();
+    const date = now.toLocaleDateString();
+    const time = now.toLocaleTimeString();
+
+    doc.setFontSize(18);
+    doc.text("Studio Helmet", 105, 20, null, null, "center");
+    doc.setFontSize(12);
+    doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
+
+    doc.text(`Invoice No: ${invoiceNo}`, 14, 40);
+    doc.text(`Date: ${date} ${time}`, 14, 48);
+
+    doc.text(`Customer: ${customerName}`, 14, 60);
+    doc.text(`Mobile: ${mobile}`, 14, 68);
+    doc.text(`Helmet: ${helmet}`, 14, 76);
+    doc.text(`Sale Price: ₹${salePrice}`, 14, 84);
+    doc.text(`Profit: ₹${profit}`, 14, 92);
+
+    doc.setFontSize(10);
+    doc.text("Thank you for shopping with Studio Helmet!", 105, 110, null, null, "center");
+
+    doc.save(`Invoice_${invoiceNo}.pdf`);
 }
 </script>
 
 </body>
-</html>
+</html>        
