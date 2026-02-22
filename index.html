@@ -13,7 +13,14 @@
         th { background:#eee; }
     </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://ftwmmfrrkbfjeefssbpr.supabase.co";
+const SUPABASE_KEY = "PASTE_YOUR_FULL_PUBLISHABLE_KEY_HERE";
 
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
 <body>
 
 <h2>Studio Helmet</h2>
@@ -125,6 +132,16 @@ function downloadInvoice(customerName, mobile, helmet, salePrice, profit, invoic
     doc.save(`Invoice_${invoiceNo}.pdf`);
 }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://ftwmmfrrkbfjeefssbpr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_XXXXXXXXXXXX";  
 
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+
+</body>
+</html>
 </body>
 </html>      
