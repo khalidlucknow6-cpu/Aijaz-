@@ -1,146 +1,167 @@
-      <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Studio Helmet - Aijaz Ahmed</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: Arial; padding:20px; background:#f4f4f4; }
-        .box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
-        input, button { width:100%; padding:8px; margin-top:8px; }
-        button { background:black; color:white; border:none; }
-        table { width:100%; border-collapse:collapse; margin-top:10px; }
-        table, th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-        th { background:#eee; }
-    </style>
+<title>Studio Helmet - Aijaz Ahmed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: Arial; padding:20px; background:#f4f4f4; }
+.box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
+input, button { width:100%; padding:8px; margin-top:8px; }
+button { background:#e91e63; color:white; border:none; border-radius:5px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+table, th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+th { background:#eee; }
+</style>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://ftwmmfrrkbfjeefssbpr.supabase.co";
-const SUPABASE_KEY = "PASTE_YOUR_FULL_PUBLISHABLE_KEY_HERE";
-
-const { createClient } = supabase;
-const client = createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
 <body>
 
 <h2>Studio Helmet</h2>
 <p>Owner: Aijaz Ahmed</p>
 
 <div class="box">
-    <h3>Add Sale</h3>
-    <input type="text" id="customer" placeholder="Customer Name">
-    <input type="text" id="mobile" placeholder="Mobile Number">
-    <input type="text" id="helmet" placeholder="Helmet Model">
-    <input type="number" id="cost" placeholder="Cost Price">
-    <input type="number" id="sale" placeholder="Sale Price">
-    <button onclick="addSale()">Add Sale</button>
+<h3>Add Sale</h3>
+<input type="text" id="customer" placeholder="Customer Name">
+<input type="text" id="mobile" placeholder="Mobile Number">
+<input type="text" id="helmet" placeholder="Helmet Model">
+<input type="number" id="cost" placeholder="Cost Price">
+<input type="number" id="sale" placeholder="Sale Price">
+<button onclick="addSale()">Add Sale</button>
 </div>
 
 <div class="box">
-    <h3>Sales Data</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Mobile</th>
-                <th>Helmet</th>
-                <th>Profit</th>
-                <th>Invoice</th>
-            </tr>
-        </thead>
-        <tbody id="data"></tbody>
-    </table>
+<h3>Search</h3>
+<input type="text" id="searchBox" placeholder="Search Customer or Invoice" onkeyup="searchData()">
 </div>
 
 <div class="box">
-    <h3>Total Profit</h3>
-    ₹ <span id="totalProfit">0</span>
+<h3>Sales Data</h3>
+<table>
+<thead>
+<tr>
+<th>Invoice</th>
+<th>Name</th>
+<th>Mobile</th>
+<th>Helmet</th>
+<th>Profit</th>
+<th>Invoice PDF</th>
+</tr>
+</thead>
+<tbody id="data"></tbody>
+</table>
+</div>
+
+<div class="box">
+<h3>Total Profit</h3>
+₹ <span id="totalProfit">0</span>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
+
+let sales = JSON.parse(localStorage.getItem("sales")) || [];
+let invoiceNumber = sales.length > 0 ? sales[sales.length - 1].invoice + 1 : 1;
+
+function saveToStorage() {
+localStorage.setItem("sales", JSON.stringify(sales));
+}
+
+function loadData() {
+const table = document.getElementById("data");
+table.innerHTML = "";
 let totalProfit = 0;
-let invoiceNumber = 1;
+
+sales.forEach(sale => {
+totalProfit += sale.profit;
+
+table.innerHTML += `
+<tr>
+<td>${sale.invoice}</td>
+<td>${sale.name}</td>
+<td>${sale.mobile}</td>
+<td>${sale.helmet}</td>
+<td>₹ ${sale.profit}</td>
+<td>
+<button onclick="downloadInvoice(${sale.invoice})">Download</button>
+</td>
+</tr>
+`;
+});
+
+document.getElementById("totalProfit").innerText = totalProfit;
+}
 
 function addSale() {
-    const name = document.getElementById("customer").value.trim();
-    const mobile = document.getElementById("mobile").value.trim();
-    const helmet = document.getElementById("helmet").value.trim();
-    const cost = parseFloat(document.getElementById("cost").value);
-    const sale = parseFloat(document.getElementById("sale").value);
 
-    if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
-        alert("Please fill all fields correctly!");
-        return;
-    }
+const name = document.getElementById("customer").value.trim();
+const mobile = document.getElementById("mobile").value.trim();
+const helmet = document.getElementById("helmet").value.trim();
+const cost = parseFloat(document.getElementById("cost").value);
+const sale = parseFloat(document.getElementById("sale").value);
 
-    const profit = sale - cost;
-    totalProfit += profit;
-
-    const row = `
-        <tr>
-            <td>${name}</td>
-            <td>${mobile}</td>
-            <td>${helmet}</td>
-            <td>₹ ${profit}</td>
-            <td>
-                <button onclick="downloadInvoice('${name}','${mobile}','${helmet}',${sale},${profit},${invoiceNumber})">
-                Download Invoice
-                </button>
-            </td>
-        </tr>
-    `;
-
-    document.getElementById("data").innerHTML += row;
-    document.getElementById("totalProfit").innerText = totalProfit;
-
-    document.getElementById("customer").value = "";
-    document.getElementById("mobile").value = "";
-    document.getElementById("helmet").value = "";
-    document.getElementById("cost").value = "";
-    document.getElementById("sale").value = "";
-
-    invoiceNumber++;
+if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
+alert("Fill all fields!");
+return;
 }
 
-function downloadInvoice(customerName, mobile, helmet, salePrice, profit, invoiceNo) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+const profit = sale - cost;
 
-    const now = new Date();
-    const date = now.toLocaleDateString();
-    const time = now.toLocaleTimeString();
+sales.push({
+invoice: invoiceNumber,
+name,
+mobile,
+helmet,
+cost,
+sale,
+profit
+});
 
-    doc.setFontSize(18);
-    doc.text("Studio Helmet", 105, 20, null, null, "center");
-    doc.setFontSize(12);
-    doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
+invoiceNumber++;
+saveToStorage();
+loadData();
 
-    doc.text(`Invoice No: ${invoiceNo}`, 14, 40);
-    doc.text(`Date: ${date} ${time}`, 14, 48);
-
-    doc.text(`Customer: ${customerName}`, 14, 60);
-    doc.text(`Mobile: ${mobile}`, 14, 68);
-    doc.text(`Helmet: ${helmet}`, 14, 76);
-    doc.text(`Sale Price: ₹${salePrice}`, 14, 84);
-    doc.text(`Profit: ₹${profit}`, 14, 92);
-
-    doc.setFontSize(10);
-    doc.text("Thank you for shopping with Studio Helmet!", 105, 110, null, null, "center");
-
-    doc.save(`Invoice_${invoiceNo}.pdf`);
+document.querySelectorAll("input").forEach(i => i.value = "");
 }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://ftwmmfrrkbfjeefssbpr.supabase.co";
-const SUPABASE_KEY = "sb_publishable_XXXXXXXXXXXX";  
 
-const { createClient } = supabase;
-const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+function searchData() {
+const keyword = document.getElementById("searchBox").value.toLowerCase();
+const rows = document.querySelectorAll("#data tr");
+
+rows.forEach(row => {
+row.style.display = row.innerText.toLowerCase().includes(keyword) ? "" : "none";
+});
+}
+
+function downloadInvoice(invoiceNo) {
+
+const sale = sales.find(s => s.invoice === invoiceNo);
+const { jsPDF } = window.jspdf;
+const doc = new jsPDF();
+
+const now = new Date();
+
+doc.setFontSize(18);
+doc.text("Studio Helmet", 105, 20, null, null, "center");
+doc.setFontSize(12);
+doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
+
+doc.text(`Invoice No: ${sale.invoice}`, 14, 45);
+doc.text(`Date: ${now.toLocaleDateString()}`, 14, 55);
+
+doc.text(`Customer: ${sale.name}`, 14, 70);
+doc.text(`Mobile: ${sale.mobile}`, 14, 80);
+doc.text(`Helmet: ${sale.helmet}`, 14, 90);
+doc.text(`Sale Price: ₹${sale.sale}`, 14, 100);
+doc.text(`Profit: ₹${sale.profit}`, 14, 110);
+
+doc.text("Thank you for shopping!", 105, 140, null, null, "center");
+
+doc.save(`Invoice_${sale.invoice}.pdf`);
+}
+
+loadData();
+
 </script>
 
 </body>
 </html>
-   
