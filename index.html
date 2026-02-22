@@ -76,6 +76,19 @@ function addSale() {
     }
 
     const profit = sale - cost;
+      // Save to Supabase
+client.from("sales").insert([
+  {
+    customer_name: name,
+    mobile: mobile,
+    helmet: helmet,
+    cost_price: cost,
+    sale_price: sale,
+    profit: profit
+  }
+]).then(response => {
+  console.log("Saved:", response);
+});
     totalProfit += profit;
 
     const row = `
