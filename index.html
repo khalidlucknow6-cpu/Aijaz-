@@ -3,155 +3,115 @@
 <head>
 <title>Studio Helmet - Aijaz Ahmed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg,#ff4e8a,#ff9ab5);
-  margin:0;
-  padding:15px;
-}
-
-.container {
-  max-width:500px;
-  margin:auto;
-}
-
-h1 {
-  text-align:center;
-  color:white;
-}
-
-.card {
-  background:white;
-  padding:15px;
-  border-radius:15px;
-  margin-bottom:20px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.2);
-}
-
-input {
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  font-size:14px;
-}
-
-button {
-  width:100%;
-  padding:12px;
-  margin-top:15px;
-  border:none;
-  border-radius:8px;
-  background:#ff2e6f;
-  color:white;
-  font-size:16px;
-  cursor:pointer;
-}
-
-button:hover {
-  background:#e6005c;
-}
-
-.sale-item {
-  background:#f9f9f9;
-  padding:10px;
-  margin-top:10px;
-  border-radius:8px;
-  font-size:14px;
-}
+body { font-family: Arial; padding:20px; background:#f4f4f4; }
+.box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
+input, button { width:100%; padding:8px; margin-top:8px; }
+button { background:#e91e63; color:white; border:none; border-radius:5px; }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th, td { border:1px solid #ddd; padding:8px; text-align:center; }
+th { background:#e91e63; color:white; }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<h2>Studio Helmet - Aijaz Ahmed</h2>
+<p>Address: Gandhi Road, Dehradun</p>
 
-<h1>Studio Helmet</h1>
-<p style="text-align:center;color:white;">Owner: Aijaz Ahmed</p>
-
-<div class="card">
+<div class="box">
 <h3>Add Sale</h3>
-
 <input type="text" id="customer" placeholder="Customer Name">
 <input type="text" id="mobile" placeholder="Mobile Number">
 <input type="text" id="model" placeholder="Helmet Model">
 <input type="number" id="cost" placeholder="Cost Price">
 <input type="number" id="sale" placeholder="Sale Price">
-
 <button onclick="addSale()">Add Sale</button>
 </div>
 
-<div class="card">
-<h3>Search</h3>
-<input type="text" id="search" placeholder="Search Customer or Model" onkeyup="displaySales()">
-</div>
-
-<div class="card">
-<h3>Sales List</h3>
-<div id="salesList"></div>
-</div>
-
+<div class="box">
+<h3>Sales Record</h3>
+<table>
+<thead>
+<tr>
+<th>Customer</th>
+<th>Model</th>
+<th>Sale</th>
+<th>Profit</th>
+<th>Invoice</th>
+</tr>
+</thead>
+<tbody id="salesTable"></tbody>
+</table>
 </div>
 
 <script>
-
 let sales = JSON.parse(localStorage.getItem("sales")) || [];
 
-function addSale(){
-  let customer = document.getElementById("customer").value;
-  let mobile = document.getElementById("mobile").value;
-  let model = document.getElementById("model").value;
-  let cost = document.getElementById("cost").value;
-  let sale = document.getElementById("sale").value;
+function addSale() {
+let customer = document.getElementById("customer").value;
+let mobile = document.getElementById("mobile").value;
+let model = document.getElementById("model").value;
+let cost = parseFloat(document.getElementById("cost").value) || 0;
+let sale = parseFloat(document.getElementById("sale").value) || 0;
 
-  if(customer=="" || sale==""){
-    alert("Please enter required fields");
-    return;
-  }
-
-  let profit = sale - cost;
-
-  sales.push({
-    customer, mobile, model, cost, sale, profit
-  });
-
-  localStorage.setItem("sales", JSON.stringify(sales));
-
-  document.getElementById("customer").value="";
-  document.getElementById("mobile").value="";
-  document.getElementById("model").value="";
-  document.getElementById("cost").value="";
-  document.getElementById("sale").value="";
-
-  displaySales();
+if(customer=="" || sale==0){
+alert("Enter required fields");
+return;
 }
 
-function displaySales(){
-  let list = document.getElementById("salesList");
-  let search = document.getElementById("search").value.toLowerCase();
-  list.innerHTML="";
+let profit = sale - cost;
 
-  sales.forEach((s,index)=>{
-    if(
-      s.customer.toLowerCase().includes(search) ||
-      s.model.toLowerCase().includes(search)
-    ){
-      list.innerHTML += `
-      <div class="sale-item">
-        <b>${s.customer}</b><br>
-        Model: ${s.model}<br>
-        Sale: ₹${s.sale}<br>
-        Profit: ₹${s.profit}
-      </div>
-      `;
-    }
-  });
+sales.push({customer, mobile, model, cost, sale, profit});
+localStorage.setItem("sales", JSON.stringify(sales));
+
+document.getElementById("customer").value="";
+document.getElementById("mobile").value="";
+document.getElementById("model").value="";
+document.getElementById("cost").value="";
+document.getElementById("sale").value="";
+
+displaySales();
+}
+
+function displaySales() {
+let table = document.getElementById("salesTable");
+table.innerHTML="";
+
+sales.forEach((s, index) => {
+table.innerHTML += `
+<tr>
+<td>${s.customer}</td>
+<td>${s.model}</td>
+<td>₹${s.sale}</td>
+<td>₹${s.profit}</td>
+<td><button onclick="downloadInvoice(${index})">PDF</button></td>
+</tr>
+`;
+});
+}
+
+function downloadInvoice(index){
+const { jsPDF } = window.jspdf;
+let doc = new jsPDF();
+
+let s = sales[index];
+
+doc.text("Studio Helmet", 20, 20);
+doc.text("Owner: Aijaz Ahmed", 20, 30);
+doc.text("Address: Gandhi Road, Dehradun", 20, 40);
+
+doc.text("Customer: " + s.customer, 20, 60);
+doc.text("Mobile: " + s.mobile, 20, 70);
+doc.text("Model: " + s.model, 20, 80);
+doc.text("Sale Price: ₹" + s.sale, 20, 90);
+doc.text("Profit: ₹" + s.profit, 20, 100);
+
+doc.save("Invoice_"+s.customer+".pdf");
 }
 
 displaySales();
-
 </script>
 
 </body>
