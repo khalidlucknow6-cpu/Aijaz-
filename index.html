@@ -3,17 +3,70 @@
 <head>
 <title>Studio Helmet - Aijaz Ahmed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body { font-family: Arial; padding:20px; background:#f4f4f4; }
-.box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
-input, button { width:100%; padding:10px; margin-top:8px; font-size:16px; }
-button { background:#e91e63; color:white; border:none; border-radius:5px; cursor:pointer; }
-button:hover { opacity:0.9; }
-table { width:100%; border-collapse:collapse; margin-top:10px; }
-table, th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-th { background:#eee; }
-.delete-btn { background:#f44336; }
-.export-btn { background:#2196f3; margin-top:10px; }
+body {
+    font-family: Arial;
+    padding:20px;
+    background:#111;
+    color:white;
+}
+
+.box {
+    background:#1c1c1c;
+    padding:15px;
+    margin-bottom:20px;
+    border-radius:10px;
+}
+
+input, button {
+    width:100%;
+    padding:10px;
+    margin-top:8px;
+    font-size:16px;
+}
+
+input {
+    background:#2a2a2a;
+    color:white;
+    border:1px solid #444;
+}
+
+button {
+    background:#000;
+    color:white;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover {
+    opacity:0.9;
+}
+
+.export-btn {
+    background:#2196f3;
+}
+
+.delete-btn {
+    background:#f44336;
+}
+
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+}
+
+table, th, td {
+    border:1px solid #333;
+    padding:8px;
+    text-align:center;
+}
+
+th {
+    background:#000;
+}
 </style>
 </head>
 <body>
@@ -38,6 +91,7 @@ th { background:#eee; }
 
 <div class="box">
 <h3>Sales Data</h3>
+
 <table>
 <thead>
 <tr>
@@ -54,6 +108,7 @@ th { background:#eee; }
 </table>
 
 <button class="export-btn" onclick="exportCSV()">Export to Excel</button>
+
 </div>
 
 <div class="box">
@@ -69,70 +124,133 @@ let sales = JSON.parse(localStorage.getItem("sales")) || [];
 let invoiceNumber = sales.length > 0 ? sales[sales.length - 1].invoice + 1 : 1;
 
 function saveToStorage() {
-localStorage.setItem("sales", JSON.stringify(sales));
+    localStorage.setItem("sales", JSON.stringify(sales));
 }
 
 function loadData() {
-const table = document.getElementById("data");
-table.innerHTML = "";
-let totalProfit = 0;
 
-sales.forEach(sale => {
-totalProfit += sale.profit;
+    const table = document.getElementById("data");
+    table.innerHTML = "";
 
-table.innerHTML += `
-<tr>
-<td>${sale.invoice}</td>
-<td>${sale.name}</td>
-<td>${sale.mobile}</td>
-<td>${sale.helmet}</td>
-<td>₹ ${sale.profit}</td>
-<td><button onclick="downloadInvoice(${sale.invoice})">PDF</button></td>
-<td><button class="delete-btn" onclick="deleteSale(${sale.invoice})">X</button></td>
-</tr>
-`;
-});
+    let totalProfit = 0;
 
-document.getElementById("totalProfit").innerText = totalProfit;
+    sales.forEach(sale => {
+
+        totalProfit += sale.profit;
+
+        table.innerHTML += `
+        <tr>
+        <td>${sale.invoice}</td>
+        <td>${sale.name}</td>
+        <td>${sale.mobile}</td>
+        <td>${sale.helmet}</td>
+        <td>₹ ${sale.profit}</td>
+        <td><button onclick="downloadInvoice(${sale.invoice})">PDF</button></td>
+        <td><button class="delete-btn" onclick="deleteSale(${sale.invoice})">X</button></td>
+        </tr>
+        `;
+    });
+
+    document.getElementById("totalProfit").innerText = totalProfit;
 }
 
 function addSale() {
 
-const name = document.getElementById("customer").value.trim();
-const mobile = document.getElementById("mobile").value.trim();
-const helmet = document.getElementById("helmet").value.trim();
-const cost = parseFloat(document.getElementById("cost").value);
-const sale = parseFloat(document.getElementById("sale").value);
+    const name = document.getElementById("customer").value.trim();
+    const mobile = document.getElementById("mobile").value.trim();
+    const helmet = document.getElementById("helmet").value.trim();
+    const cost = parseFloat(document.getElementById("cost").value);
+    const sale = parseFloat(document.getElementById("sale").value);
 
-if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
-alert("Fill all fields!");
-return;
-}
+    if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
+        alert("Fill all fields!");
+        return;
+    }
 
-const profit = sale - cost;
+    const profit = sale - cost;
 
-sales.push({
-invoice: invoiceNumber,
-name,
-mobile,
-helmet,
-cost,
-sale,
-profit
-});
+    sales.push({
+        invoice: invoiceNumber,
+        name,
+        mobile,
+        helmet,
+        cost,
+        sale,
+        profit
+    });
 
-invoiceNumber++;
-saveToStorage();
-loadData();
+    invoiceNumber++;
 
-document.getElementById("customer").value = "";
-document.getElementById("mobile").value = "";
-document.getElementById("helmet").value = "";
-document.getElementById("cost").value = "";
-document.getElementById("sale").value = "";
+    saveToStorage();
+    loadData();
+
+    document.getElementById("customer").value = "";
+    document.getElementById("mobile").value = "";
+    document.getElementById("helmet").value = "";
+    document.getElementById("cost").value = "";
+    document.getElementById("sale").value = "";
 }
 
 function deleteSale(invoiceNo) {
-if(confirm("Delete this sale?")) {
-sales = sales.filter(s => s.invoice !== invoiceNo);
-saveToStorage
+    if(confirm("Delete this sale?")) {
+        sales = sales.filter(s => s.invoice !== invoiceNo);
+        saveToStorage();
+        loadData();
+    }
+}
+
+function searchData() {
+    const keyword = document.getElementById("searchBox").value.toLowerCase();
+    const rows = document.querySelectorAll("#data tr");
+
+    rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(keyword) ? "" : "none";
+    });
+}
+
+function downloadInvoice(invoiceNo) {
+
+    const sale = sales.find(s => s.invoice === invoiceNo);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const now = new Date();
+
+    doc.setFontSize(18);
+    doc.text("Studio Helmet", 105, 20, null, null, "center");
+    doc.setFontSize(12);
+    doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
+
+    doc.text(`Invoice No: ${sale.invoice}`, 14, 45);
+    doc.text(`Date: ${now.toLocaleDateString()}`, 14, 55);
+
+    doc.text(`Customer: ${sale.name}`, 14, 70);
+    doc.text(`Mobile: ${sale.mobile}`, 14, 80);
+    doc.text(`Helmet: ${sale.helmet}`, 14, 90);
+    doc.text(`Sale Price: ₹${sale.sale}`, 14, 100);
+    doc.text(`Profit: ₹${sale.profit}`, 14, 110);
+
+    doc.save(`Invoice_${sale.invoice}.pdf`);
+}
+
+function exportCSV() {
+
+    let csv = "Invoice,Name,Mobile,Helmet,Cost,Sale,Profit\n";
+
+    sales.forEach(s => {
+        csv += `${s.invoice},${s.name},${s.mobile},${s.helmet},${s.cost},${s.sale},${s.profit}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "sales_data.csv";
+    link.click();
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
