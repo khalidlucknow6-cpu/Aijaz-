@@ -1,78 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Studio Helmet - Trading System</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #F4F7FB;
+}
+
+header {
+  background: #0B5ED7;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.container {
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+input, button {
+  padding: 8px;
+  margin: 5px 0;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+/* Button Colors */
+.excel { background: #198754; color: white; }
+.pdf { background: #DC3545; color: white; }
+.invoice { background: #6F42C1; color: white; }
+.profit-box { background: #20C997; color: white; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th {
+  background: #E9EEF6;
+  padding: 8px;
+}
+
+td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.switch {
+  width: 60px;
+  height: 30px;
+  background: #FF6B00;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+}
+
+.switch::after {
+  content: "";
+  width: 26px;
+  height: 26px;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.switch.active {
+  background: #198754;
+}
+
+.switch.active::after {
+  left: 32px;
+}
+</style>
+</head>
+
+<body>
+
+<header>Studio Helmet - General Trading System (₹ INR)</header>
+
+<div class="container">
+
+<div class="card">
+<h3>Add Sale</h3>
+<input id="customer" placeholder="Customer Name">
+<input id="item" placeholder="Item Name">
+<input id="saleAmount" type="number" placeholder="Sale Amount (₹)">
+<button onclick="addSale()">Add Sale</button>
+</div>
+
+<div class="card">
+<h3>Add Purchase</h3>
+<input id="purchaseItem" placeholder="Item Name">
+<input id="purchaseAmount" type="number" placeholder="Purchase Amount (₹)">
+<button onclick="addPurchase()">Add Purchase</button>
+</div>
+
+<div class="card profit-box">
+Total Profit: ₹ <span id="profit">0</span>
+</div>
+
+<div class="card">
+<h3>Sales History</h3>
+<button class="excel" onclick="exportExcel()">Export Excel</button>
+<button class="pdf" onclick="exportPDF()">Export PDF</button>
+<table id="salesTable">
+<thead>
+<tr>
+<th>Customer</th>
+<th>Item</th>
+<th>Amount (₹)</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<div class="card">
+<h3>Invoice</h3>
+<button class="invoice" onclick="generateInvoice()">Generate Invoice PDF</button>
+</div>
+
+<div class="card">
+<h3>Insurance CSR Switch</h3>
+<div class="switch" onclick="toggleSwitch(this)"></div>
+</div>
+
+</div>
+
 <script>
-let totalProfit = 0;
-let invoiceNumber = 1;
+let sales = JSON.parse(localStorage.getItem("sales")) || [];
+let purchases = JSON.parse(localStorage.getItem("purchases")) || [];
 
-// Function to add a sale
+function saveData() {
+  localStorage.setItem("sales", JSON.stringify(sales));
+  localStorage.setItem("purchases", JSON.stringify(purchases));
+  calculateProfit();
+  displaySales();
+}
+
 function addSale() {
-    const name = document.getElementById("customer").value.trim();
-    const mobile = document.getElementById("mobile").value.trim();
-    const helmet = document.getElementById("helmet").value.trim();
-    const cost = parseFloat(document.getElementById("cost").value);
-    const sale = parseFloat(document.getElementById("sale").value);
+  let customer = document.getElementById("customer").value;
+  let item = document.getElementById("item").value;
+  let amount = parseFloat(document.getElementById("saleAmount").value);
 
-    if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
-        alert("Please fill all fields correctly!");
-        return;
-    }
+  if (!customer || !item || !amount) return alert("Fill all fields");
 
-    const profit = sale - cost;
-    totalProfit += profit;
-
-    // Add row to table with Download Invoice button
-    const row = `<tr>
-        <td>${name}</td>
-        <td>${mobile}</td>
-        <td>${helmet}</td>
-        <td>₹ ${profit}</td>
-        <td><button onclick="downloadInvoice('${name}','${mobile}','${helmet}',${sale},${profit},${invoiceNumber})">Download Invoice</button></td>
-    </tr>`;
-
-    document.getElementById("data").innerHTML += row;
-    document.getElementById("totalProfit").innerText = totalProfit;
-
-    // Clear input fields
-    document.getElementById("customer").value = "";
-    document.getElementById("mobile").value = "";
-    document.getElementById("helmet").value = "";
-    document.getElementById("cost").value = "";
-    document.getElementById("sale").value = "";
-
-    invoiceNumber++;
+  sales.push({customer, item, amount});
+  saveData();
 }
 
-// Function to download invoice as PDF
-function downloadInvoice(customerName, mobile, helmet, salePrice, profit, invoiceNo) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+function addPurchase() {
+  let item = document.getElementById("purchaseItem").value;
+  let amount = parseFloat(document.getElementById("purchaseAmount").value);
 
-    const now = new Date();
-    const date = now.toLocaleDateString();
-    const time = now.toLocaleTimeString();
+  if (!item || !amount) return alert("Fill all fields");
 
-    // Header
-    doc.setFontSize(18);
-    doc.text("Studio Helmet", 105, 20, null, null, "center");
-    doc.setFontSize(12);
-    doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
-
-    // Invoice details
-    doc.text(`Invoice No: ${invoiceNo}`, 14, 40);
-    doc.text(`Date: ${date}  Time: ${time}`, 14, 48);
-
-    // Customer & sale details
-    doc.text(`Customer: ${customerName}`, 14, 60);
-    doc.text(`Mobile: ${mobile}`, 14, 68);
-    doc.text(`Helmet Model: ${helmet}`, 14, 76);
-    doc.text(`Sale Price: ₹${salePrice}`, 14, 84);
-    doc.text(`Profit: ₹${profit}`, 14, 92);
-
-    doc.setFontSize(10);
-    doc.text("Thank you for shopping with Studio Helmet!", 105, 110, null, null, "center");
-
-    // Save PDF
-    doc.save(`Invoice_${invoiceNo}.pdf`);
+  purchases.push({item, amount});
+  saveData();
 }
+
+function calculateProfit() {
+  let totalSales = sales.reduce((a,b)=>a+b.amount,0);
+  let totalPurchase = purchases.reduce((a,b)=>a+b.amount,0);
+  document.getElementById("profit").innerText = totalSales - totalPurchase;
+}
+
+function displaySales() {
+  let tbody = document.querySelector("#salesTable tbody");
+  tbody.innerHTML = "";
+  sales.forEach(s => {
+    tbody.innerHTML += `<tr><td>${s.customer}</td><td>${s.item}</td><td>₹ ${s.amount}</td></tr>`;
+  });
+}
+
+function exportExcel() {
+  let ws = XLSX.utils.json_to_sheet(sales);
+  let wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sales");
+  XLSX.writeFile(wb, "StudioHelmetSales.xlsx");
+}
+
+async function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("Studio Helmet Sales Report", 10, 10);
+  let y = 20;
+  sales.forEach(s => {
+    doc.text(`${s.customer} - ${s.item} - ₹ ${s.amount}`, 10, y);
+    y += 10;
+  });
+  doc.save("SalesReport.pdf");
+}
+
+async function generateInvoice() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("Studio Helmet Invoice", 10, 10);
+  doc.text("Thank you for your business!", 10, 20);
+  doc.save("Invoice.pdf");
+}
+
+function toggleSwitch(el) {
+  el.classList.toggle("active");
+}
+
+calculateProfit();
+displaySales();
 </script>
 
+</body>
+</html>
