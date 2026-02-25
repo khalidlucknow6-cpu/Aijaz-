@@ -8,133 +8,97 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #F4F7FB;
+body{
+    font-family: Arial, sans-serif;
+    margin:0;
+    background:#F4F7FB;
 }
 
-/* Header */
-header {
-  background: linear-gradient(90deg,#0B5ED7,#0A58CA);
-  color: white;
-  padding: 18px;
-  text-align: center;
-  font-size: 22px;
-  font-weight: bold;
-  letter-spacing: 1px;
+header{
+    background:linear-gradient(90deg,#0B5ED7,#0A58CA);
+    color:white;
+    padding:18px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
 }
 
-/* Layout */
-.container {
-  padding: 20px;
-  max-width: 1100px;
-  margin: auto;
+.container{
+    padding:20px;
+    max-width:1100px;
+    margin:auto;
 }
 
-/* Cards */
-.card {
-  background: #FFFFFF;
-  padding: 18px;
-  margin-bottom: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+.card{
+    background:white;
+    padding:18px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
 }
 
-h3 {
-  margin-top: 0;
-  color: #0B5ED7;
+h3{
+    margin-top:0;
+    color:#0B5ED7;
 }
 
-/* Inputs */
-input {
-  padding: 10px;
-  margin: 6px 4px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  width: 200px;
+input{
+    padding:10px;
+    margin:6px 4px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    width:200px;
 }
 
-/* Buttons */
-button {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  margin: 5px 4px;
-  transition: 0.3s;
+button{
+    padding:10px 14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    margin:5px 4px;
+    transition:0.3s;
 }
 
-button:hover {
-  opacity: 0.85;
+button:hover{opacity:0.85;}
+
+.primary{background:#0B5ED7;color:white;}
+.excel{background:#198754;color:white;}
+.pdf{background:#DC3545;color:white;}
+.invoice-btn{background:#6F42C1;color:white;}
+
+.profit-box{
+    background:#20C997;
+    color:white;
+    padding:18px;
+    font-size:18px;
+    font-weight:bold;
+    border-radius:10px;
+    text-align:center;
 }
 
-/* Button Colors */
-.primary { background: #0B5ED7; color: white; }
-.excel { background: #198754; color: white; }
-.pdf { background: #DC3545; color: white; }
-.invoice { background: #6F42C1; color: white; }
-
-/* Profit Box */
-.profit-box {
-  background: #20C997;
-  color: white;
-  padding: 18px;
-  font-size: 18px;
-  font-weight: bold;
-  border-radius: 10px;
-  text-align: center;
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
 }
 
-/* Table */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+th{
+    background:#E9EEF6;
+    padding:10px;
+    text-align:left;
 }
 
-th {
-  background: #E9EEF6;
-  padding: 10px;
-  text-align: left;
+td{
+    padding:10px;
+    border-bottom:1px solid #ddd;
 }
 
-td {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+.small-btn{
+    padding:6px 10px;
+    font-size:12px;
 }
 
-/* Switch */
-.switch {
-  width: 65px;
-  height: 32px;
-  background: #FF6B00;
-  border-radius: 20px;
-  position: relative;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.switch::after {
-  content: "";
-  width: 28px;
-  height: 28px;
-  background: white;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-.switch.active {
-  background: #198754;
-}
-
-.switch.active::after {
-  left: 35px;
-}
 </style>
 </head>
 
@@ -167,105 +131,143 @@ Total Profit: ₹ <span id="profit">0</span>
 <h3>Sales History</h3>
 <button class="excel" onclick="exportExcel()">Export Excel</button>
 <button class="pdf" onclick="exportPDF()">Export PDF</button>
+
 <table id="salesTable">
 <thead>
 <tr>
 <th>Customer</th>
 <th>Item</th>
 <th>Amount (₹)</th>
+<th>Invoice</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
 </div>
 
-<div class="card">
-<h3>Invoice</h3>
-<button class="invoice" onclick="generateInvoice()">Generate Invoice PDF</button>
-</div>
-
-<div class="card">
-<h3>Insurance CSR Switch</h3>
-<div class="switch" onclick="toggleSwitch(this)"></div>
-</div>
-
 </div>
 
 <script>
+
 let sales = JSON.parse(localStorage.getItem("sales")) || [];
 let purchases = JSON.parse(localStorage.getItem("purchases")) || [];
+let invoiceCounter = parseInt(localStorage.getItem("invoiceCounter")) || 1000;
 
-function saveData() {
-  localStorage.setItem("sales", JSON.stringify(sales));
-  localStorage.setItem("purchases", JSON.stringify(purchases));
-  calculateProfit();
-  displaySales();
+function saveData(){
+    localStorage.setItem("sales",JSON.stringify(sales));
+    localStorage.setItem("purchases",JSON.stringify(purchases));
+    localStorage.setItem("invoiceCounter",invoiceCounter);
+    calculateProfit();
+    displaySales();
 }
 
-function addSale() {
-  let customer = document.getElementById("customer").value;
-  let item = document.getElementById("item").value;
-  let amount = parseFloat(document.getElementById("saleAmount").value);
-  if (!customer || !item || !amount) return alert("Fill all fields");
-  sales.push({customer, item, amount});
-  saveData();
+function addSale(){
+    let customer=document.getElementById("customer").value;
+    let item=document.getElementById("item").value;
+    let amount=parseFloat(document.getElementById("saleAmount").value);
+
+    if(!customer||!item||!amount) return alert("Fill all fields");
+
+    sales.push({customer,item,amount});
+    saveData();
 }
 
-function addPurchase() {
-  let item = document.getElementById("purchaseItem").value;
-  let amount = parseFloat(document.getElementById("purchaseAmount").value);
-  if (!item || !amount) return alert("Fill all fields");
-  purchases.push({item, amount});
-  saveData();
+function addPurchase(){
+    let item=document.getElementById("purchaseItem").value;
+    let amount=parseFloat(document.getElementById("purchaseAmount").value);
+
+    if(!item||!amount) return alert("Fill all fields");
+
+    purchases.push({item,amount});
+    saveData();
 }
 
-function calculateProfit() {
-  let totalSales = sales.reduce((a,b)=>a+b.amount,0);
-  let totalPurchase = purchases.reduce((a,b)=>a+b.amount,0);
-  document.getElementById("profit").innerText = totalSales - totalPurchase;
+function calculateProfit(){
+    let totalSales=sales.reduce((a,b)=>a+b.amount,0);
+    let totalPurchase=purchases.reduce((a,b)=>a+b.amount,0);
+    document.getElementById("profit").innerText=totalSales-totalPurchase;
 }
 
-function displaySales() {
-  let tbody = document.querySelector("#salesTable tbody");
-  tbody.innerHTML = "";
-  sales.forEach(s => {
-    tbody.innerHTML += `<tr><td>${s.customer}</td><td>${s.item}</td><td>₹ ${s.amount}</td></tr>`;
-  });
+function displaySales(){
+    let tbody=document.querySelector("#salesTable tbody");
+    tbody.innerHTML="";
+    sales.forEach((s,index)=>{
+        tbody.innerHTML+=`
+        <tr>
+        <td>${s.customer}</td>
+        <td>${s.item}</td>
+        <td>₹ ${s.amount}</td>
+        <td><button class="invoice-btn small-btn" onclick="generateInvoice(${index})">Generate</button></td>
+        </tr>`;
+    });
 }
 
-function exportExcel() {
-  let ws = XLSX.utils.json_to_sheet(sales);
-  let wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Sales");
-  XLSX.writeFile(wb, "StudioHelmetSales.xlsx");
+function exportExcel(){
+    let ws=XLSX.utils.json_to_sheet(sales);
+    let wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Sales");
+    XLSX.writeFile(wb,"StudioHelmetSales.xlsx");
 }
 
-async function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("Studio Helmet Sales Report", 10, 10);
-  let y = 20;
-  sales.forEach(s => {
-    doc.text(`${s.customer} - ${s.item} - ₹ ${s.amount}`, 10, y);
-    y += 10;
-  });
-  doc.save("SalesReport.pdf");
+async function exportPDF(){
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF();
+    doc.text("Studio Helmet Sales Report",10,10);
+    let y=20;
+    sales.forEach(s=>{
+        doc.text(`${s.customer} - ${s.item} - ₹ ${s.amount}`,10,y);
+        y+=10;
+    });
+    doc.save("SalesReport.pdf");
 }
 
-async function generateInvoice() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("Studio Helmet Invoice", 10, 10);
-  doc.text("Thank you for your business!", 10, 20);
-  doc.save("Invoice.pdf");
-}
+async function generateInvoice(index){
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF();
 
-function toggleSwitch(el) {
-  el.classList.toggle("active");
+    invoiceCounter++;
+    let invoiceNo="INV-"+invoiceCounter;
+    let sale=sales[index];
+    let today=new Date().toLocaleDateString();
+
+    doc.setFontSize(16);
+    doc.text("Studio Helmet",20,20);
+    doc.setFontSize(12);
+    doc.text("General Trading",20,28);
+
+    doc.text("Invoice No: "+invoiceNo,140,20);
+    doc.text("Date: "+today,140,28);
+
+    doc.line(20,35,190,35);
+
+    doc.text("Bill To:",20,45);
+    doc.text(sale.customer,20,52);
+
+    doc.line(20,60,190,60);
+
+    doc.text("Item",20,70);
+    doc.text("Amount (₹)",150,70);
+
+    doc.line(20,73,190,73);
+
+    doc.text(sale.item,20,85);
+    doc.text("₹ "+sale.amount,150,85);
+
+    doc.line(20,95,190,95);
+
+    doc.setFontSize(14);
+    doc.text("Total: ₹ "+sale.amount,150,110);
+
+    doc.text("Authorized Signature",20,130);
+
+    doc.save(invoiceNo+".pdf");
+
+    saveData();
 }
 
 calculateProfit();
 displaySales();
+
 </script>
 
 </body>
