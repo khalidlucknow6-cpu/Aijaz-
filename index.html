@@ -3,116 +3,136 @@
 <head>
 <title>Studio Helmet - Aijaz Ahmed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 body { font-family: Arial; padding:20px; background:#f4f4f4; }
 .box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
-input, button { width:100%; padding:8px; margin-top:8px; }
-button { background:#e91e63; color:white; border:none; border-radius:5px; }
-table { width:100%; border-collapse:collapse; margin-top:15px; }
-th, td { border:1px solid #ddd; padding:8px; text-align:center; }
-th { background:#e91e63; color:white; }
+input, button { width:100%; padding:10px; margin-top:8px; font-size:16px; }
+button { background:#e91e63; color:white; border:none; border-radius:5px; cursor:pointer; }
+button:hover { opacity:0.9; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+table, th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+th { background:#eee; }
+.delete-btn { background:#f44336; }
+.export-btn { background:#2196f3; margin-top:10px; }
 </style>
 </head>
-
 <body>
 
-<h2>Studio Helmet - Aijaz Ahmed</h2>
-<p>Address: Gandhi Road, Dehradun</p>
+<h2>Studio Helmet</h2>
+<p>Owner: Aijaz Ahmed</p>
 
 <div class="box">
 <h3>Add Sale</h3>
 <input type="text" id="customer" placeholder="Customer Name">
 <input type="text" id="mobile" placeholder="Mobile Number">
-<input type="text" id="model" placeholder="Helmet Model">
+<input type="text" id="helmet" placeholder="Helmet Model">
 <input type="number" id="cost" placeholder="Cost Price">
 <input type="number" id="sale" placeholder="Sale Price">
 <button onclick="addSale()">Add Sale</button>
 </div>
 
 <div class="box">
-<h3>Sales Record</h3>
+<h3>Search</h3>
+<input type="text" id="searchBox" placeholder="Search Customer or Invoice" onkeyup="searchData()">
+</div>
+
+<div class="box">
+<h3>Sales Data</h3>
 <table>
 <thead>
 <tr>
-<th>Customer</th>
-<th>Model</th>
-<th>Sale</th>
-<th>Profit</th>
 <th>Invoice</th>
+<th>Name</th>
+<th>Mobile</th>
+<th>Helmet</th>
+<th>Profit</th>
+<th>PDF</th>
+<th>Delete</th>
 </tr>
 </thead>
-<tbody id="salesTable"></tbody>
+<tbody id="data"></tbody>
 </table>
+
+<button class="export-btn" onclick="exportCSV()">Export to Excel</button>
 </div>
 
+<div class="box">
+<h3>Total Profit</h3>
+₹ <span id="totalProfit">0</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
+
 let sales = JSON.parse(localStorage.getItem("sales")) || [];
+let invoiceNumber = sales.length > 0 ? sales[sales.length - 1].invoice + 1 : 1;
 
-function addSale() {
-let customer = document.getElementById("customer").value;
-let mobile = document.getElementById("mobile").value;
-let model = document.getElementById("model").value;
-let cost = parseFloat(document.getElementById("cost").value) || 0;
-let sale = parseFloat(document.getElementById("sale").value) || 0;
-
-if(customer=="" || sale==0){
-alert("Enter required fields");
-return;
-}
-
-let profit = sale - cost;
-
-sales.push({customer, mobile, model, cost, sale, profit});
+function saveToStorage() {
 localStorage.setItem("sales", JSON.stringify(sales));
-
-document.getElementById("customer").value="";
-document.getElementById("mobile").value="";
-document.getElementById("model").value="";
-document.getElementById("cost").value="";
-document.getElementById("sale").value="";
-
-displaySales();
 }
 
-function displaySales() {
-let table = document.getElementById("salesTable");
-table.innerHTML="";
+function loadData() {
+const table = document.getElementById("data");
+table.innerHTML = "";
+let totalProfit = 0;
 
-sales.forEach((s, index) => {
+sales.forEach(sale => {
+totalProfit += sale.profit;
+
 table.innerHTML += `
 <tr>
-<td>${s.customer}</td>
-<td>${s.model}</td>
-<td>₹${s.sale}</td>
-<td>₹${s.profit}</td>
-<td><button onclick="downloadInvoice(${index})">PDF</button></td>
+<td>${sale.invoice}</td>
+<td>${sale.name}</td>
+<td>${sale.mobile}</td>
+<td>${sale.helmet}</td>
+<td>₹ ${sale.profit}</td>
+<td><button onclick="downloadInvoice(${sale.invoice})">PDF</button></td>
+<td><button class="delete-btn" onclick="deleteSale(${sale.invoice})">X</button></td>
 </tr>
 `;
 });
+
+document.getElementById("totalProfit").innerText = totalProfit;
 }
 
-function downloadInvoice(index){
-const { jsPDF } = window.jspdf;
-let doc = new jsPDF();
+function addSale() {
 
-let s = sales[index];
+const name = document.getElementById("customer").value.trim();
+const mobile = document.getElementById("mobile").value.trim();
+const helmet = document.getElementById("helmet").value.trim();
+const cost = parseFloat(document.getElementById("cost").value);
+const sale = parseFloat(document.getElementById("sale").value);
 
-doc.text("Studio Helmet", 20, 20);
-doc.text("Owner: Aijaz Ahmed", 20, 30);
-doc.text("Address: Gandhi Road, Dehradun", 20, 40);
-
-doc.text("Customer: " + s.customer, 20, 60);
-doc.text("Mobile: " + s.mobile, 20, 70);
-doc.text("Model: " + s.model, 20, 80);
-doc.text("Sale Price: ₹" + s.sale, 20, 90);
-doc.text("Profit: ₹" + s.profit, 20, 100);
-
-doc.save("Invoice_"+s.customer+".pdf");
+if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
+alert("Fill all fields!");
+return;
 }
 
-displaySales();
-</script>
+const profit = sale - cost;
 
-</body>
-</html>
+sales.push({
+invoice: invoiceNumber,
+name,
+mobile,
+helmet,
+cost,
+sale,
+profit
+});
+
+invoiceNumber++;
+saveToStorage();
+loadData();
+
+document.getElementById("customer").value = "";
+document.getElementById("mobile").value = "";
+document.getElementById("helmet").value = "";
+document.getElementById("cost").value = "";
+document.getElementById("sale").value = "";
+}
+
+function deleteSale(invoiceNo) {
+if(confirm("Delete this sale?")) {
+sales = sales.filter(s => s.invoice !== invoiceNo);
+saveToStorage
