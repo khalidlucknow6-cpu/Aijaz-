@@ -4,192 +4,153 @@
 <title>Studio Helmet - Aijaz Ahmed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: Arial; padding:20px; background:#f4f4f4; }
-.box { background:white; padding:15px; margin-bottom:20px; border-radius:10px; }
-input, button { width:100%; padding:10px; margin-top:8px; font-size:16px; }
-button { background:#e91e63; color:white; border:none; border-radius:5px; cursor:pointer; }
-button:hover { opacity:0.9; }
-table { width:100%; border-collapse:collapse; margin-top:10px; }
-table, th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-th { background:#eee; }
-.delete-btn { background:#f44336; }
-.export-btn { background:#2196f3; margin-top:10px; }
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#ff4e8a,#ff9ab5);
+  margin:0;
+  padding:15px;
+}
+
+.container {
+  max-width:500px;
+  margin:auto;
+}
+
+h1 {
+  text-align:center;
+  color:white;
+}
+
+.card {
+  background:white;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:20px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+input {
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  border:none;
+  border-radius:8px;
+  background:#ff2e6f;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#e6005c;
+}
+
+.sale-item {
+  background:#f9f9f9;
+  padding:10px;
+  margin-top:10px;
+  border-radius:8px;
+  font-size:14px;
+}
 </style>
 </head>
+
 <body>
 
-<h2>Studio Helmet</h2>
-<p>Owner: Aijaz Ahmed</p>
+<div class="container">
 
-<div class="box">
+<h1>Studio Helmet</h1>
+<p style="text-align:center;color:white;">Owner: Aijaz Ahmed</p>
+
+<div class="card">
 <h3>Add Sale</h3>
+
 <input type="text" id="customer" placeholder="Customer Name">
 <input type="text" id="mobile" placeholder="Mobile Number">
-<input type="text" id="helmet" placeholder="Helmet Model">
+<input type="text" id="model" placeholder="Helmet Model">
 <input type="number" id="cost" placeholder="Cost Price">
 <input type="number" id="sale" placeholder="Sale Price">
+
 <button onclick="addSale()">Add Sale</button>
 </div>
 
-<div class="box">
+<div class="card">
 <h3>Search</h3>
-<input type="text" id="searchBox" placeholder="Search Customer or Invoice" onkeyup="searchData()">
+<input type="text" id="search" placeholder="Search Customer or Model" onkeyup="displaySales()">
 </div>
 
-<div class="box">
-<h3>Sales Data</h3>
-<table>
-<thead>
-<tr>
-<th>Invoice</th>
-<th>Name</th>
-<th>Mobile</th>
-<th>Helmet</th>
-<th>Profit</th>
-<th>PDF</th>
-<th>Delete</th>
-</tr>
-</thead>
-<tbody id="data"></tbody>
-</table>
-
-<button class="export-btn" onclick="exportCSV()">Export to Excel</button>
+<div class="card">
+<h3>Sales List</h3>
+<div id="salesList"></div>
 </div>
 
-<div class="box">
-<h3>Total Profit</h3>
-₹ <span id="totalProfit">0</span>
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
 
 let sales = JSON.parse(localStorage.getItem("sales")) || [];
-let invoiceNumber = sales.length > 0 ? sales[sales.length - 1].invoice + 1 : 1;
 
-function saveToStorage() {
-localStorage.setItem("sales", JSON.stringify(sales));
+function addSale(){
+  let customer = document.getElementById("customer").value;
+  let mobile = document.getElementById("mobile").value;
+  let model = document.getElementById("model").value;
+  let cost = document.getElementById("cost").value;
+  let sale = document.getElementById("sale").value;
+
+  if(customer=="" || sale==""){
+    alert("Please enter required fields");
+    return;
+  }
+
+  let profit = sale - cost;
+
+  sales.push({
+    customer, mobile, model, cost, sale, profit
+  });
+
+  localStorage.setItem("sales", JSON.stringify(sales));
+
+  document.getElementById("customer").value="";
+  document.getElementById("mobile").value="";
+  document.getElementById("model").value="";
+  document.getElementById("cost").value="";
+  document.getElementById("sale").value="";
+
+  displaySales();
 }
 
-function loadData() {
-const table = document.getElementById("data");
-table.innerHTML = "";
-let totalProfit = 0;
+function displaySales(){
+  let list = document.getElementById("salesList");
+  let search = document.getElementById("search").value.toLowerCase();
+  list.innerHTML="";
 
-sales.forEach(sale => {
-totalProfit += sale.profit;
-
-table.innerHTML += `
-<tr>
-<td>${sale.invoice}</td>
-<td>${sale.name}</td>
-<td>${sale.mobile}</td>
-<td>${sale.helmet}</td>
-<td>₹ ${sale.profit}</td>
-<td><button onclick="downloadInvoice(${sale.invoice})">PDF</button></td>
-<td><button class="delete-btn" onclick="deleteSale(${sale.invoice})">X</button></td>
-</tr>
-`;
-});
-
-document.getElementById("totalProfit").innerText = totalProfit;
+  sales.forEach((s,index)=>{
+    if(
+      s.customer.toLowerCase().includes(search) ||
+      s.model.toLowerCase().includes(search)
+    ){
+      list.innerHTML += `
+      <div class="sale-item">
+        <b>${s.customer}</b><br>
+        Model: ${s.model}<br>
+        Sale: ₹${s.sale}<br>
+        Profit: ₹${s.profit}
+      </div>
+      `;
+    }
+  });
 }
 
-function addSale() {
-
-const name = document.getElementById("customer").value.trim();
-const mobile = document.getElementById("mobile").value.trim();
-const helmet = document.getElementById("helmet").value.trim();
-const cost = parseFloat(document.getElementById("cost").value);
-const sale = parseFloat(document.getElementById("sale").value);
-
-if (!name || !mobile || !helmet || isNaN(cost) || isNaN(sale)) {
-alert("Fill all fields!");
-return;
-}
-
-const profit = sale - cost;
-
-sales.push({
-invoice: invoiceNumber,
-name,
-mobile,
-helmet,
-cost,
-sale,
-profit
-});
-
-invoiceNumber++;
-saveToStorage();
-loadData();
-
-document.getElementById("customer").value = "";
-document.getElementById("mobile").value = "";
-document.getElementById("helmet").value = "";
-document.getElementById("cost").value = "";
-document.getElementById("sale").value = "";
-}
-
-function deleteSale(invoiceNo) {
-if(confirm("Delete this sale?")) {
-sales = sales.filter(s => s.invoice !== invoiceNo);
-saveToStorage();
-loadData();
-}
-}
-
-function searchData() {
-const keyword = document.getElementById("searchBox").value.toLowerCase();
-const rows = document.querySelectorAll("#data tr");
-
-rows.forEach(row => {
-row.style.display = row.innerText.toLowerCase().includes(keyword) ? "" : "none";
-});
-}
-
-function downloadInvoice(invoiceNo) {
-
-const sale = sales.find(s => s.invoice === invoiceNo);
-const { jsPDF } = window.jspdf;
-const doc = new jsPDF();
-
-const now = new Date();
-
-doc.setFontSize(18);
-doc.text("Studio Helmet", 105, 20, null, null, "center");
-doc.setFontSize(12);
-doc.text("Owner: Aijaz Ahmed", 105, 28, null, null, "center");
-
-doc.text(`Invoice No: ${sale.invoice}`, 14, 45);
-doc.text(`Date: ${now.toLocaleDateString()}`, 14, 55);
-
-doc.text(`Customer: ${sale.name}`, 14, 70);
-doc.text(`Mobile: ${sale.mobile}`, 14, 80);
-doc.text(`Helmet: ${sale.helmet}`, 14, 90);
-doc.text(`Sale Price: ₹${sale.sale}`, 14, 100);
-doc.text(`Profit: ₹${sale.profit}`, 14, 110);
-
-doc.text("Thank you for shopping!", 105, 140, null, null, "center");
-
-doc.save(`Invoice_${sale.invoice}.pdf`);
-}
-
-function exportCSV() {
-let csv = "Invoice,Name,Mobile,Helmet,Cost,Sale,Profit\n";
-sales.forEach(s => {
-csv += `${s.invoice},${s.name},${s.mobile},${s.helmet},${s.cost},${s.sale},${s.profit}\n`;
-});
-
-const blob = new Blob([csv], { type: "text/csv" });
-const link = document.createElement("a");
-link.href = URL.createObjectURL(blob);
-link.download = "sales_data.csv";
-link.click();
-}
-
-loadData();
+displaySales();
 
 </script>
 
