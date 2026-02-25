@@ -1,274 +1,67 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Studio Helmet - Trading System</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<style>
-body{
-    font-family: Arial, sans-serif;
-    margin:0;
-    background:#F4F7FB;
-}
-
-header{
-    background:linear-gradient(90deg,#0B5ED7,#0A58CA);
-    color:white;
-    padding:18px;
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-}
-
-.container{
-    padding:20px;
-    max-width:1100px;
-    margin:auto;
-}
-
-.card{
-    background:white;
-    padding:18px;
-    margin-bottom:20px;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-}
-
-h3{
-    margin-top:0;
-    color:#0B5ED7;
-}
-
-input{
-    padding:10px;
-    margin:6px 4px;
-    border-radius:6px;
-    border:1px solid #ccc;
-    width:200px;
-}
-
-button{
-    padding:10px 14px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-    margin:5px 4px;
-    transition:0.3s;
-}
-
-button:hover{opacity:0.85;}
-
-.primary{background:#0B5ED7;color:white;}
-.excel{background:#198754;color:white;}
-.pdf{background:#DC3545;color:white;}
-.invoice-btn{background:#6F42C1;color:white;}
-
-.profit-box{
-    background:#20C997;
-    color:white;
-    padding:18px;
-    font-size:18px;
-    font-weight:bold;
-    border-radius:10px;
-    text-align:center;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:10px;
-}
-
-th{
-    background:#E9EEF6;
-    padding:10px;
-    text-align:left;
-}
-
-td{
-    padding:10px;
-    border-bottom:1px solid #ddd;
-}
-
-.small-btn{
-    padding:6px 10px;
-    font-size:12px;
-}
-
-</style>
-</head>
-
-<body>
-
-<header>Studio Helmet - General Trading System (₹ INR)</header>
-
-<div class="container">
-
-<div class="card">
-<h3>Add Sale</h3>
-<input id="customer" placeholder="Customer Name">
-<input id="item" placeholder="Item Name">
-<input id="saleAmount" type="number" placeholder="Sale Amount (₹)">
-<button class="primary" onclick="addSale()">Add Sale</button>
-</div>
-
-<div class="card">
-<h3>Add Purchase</h3>
-<input id="purchaseItem" placeholder="Item Name">
-<input id="purchaseAmount" type="number" placeholder="Purchase Amount (₹)">
-<button class="primary" onclick="addPurchase()">Add Purchase</button>
-</div>
-
-<div class="profit-box">
-Total Profit: ₹ <span id="profit">0</span>
-</div>
-
-<div class="card">
-<h3>Sales History</h3>
-<button class="excel" onclick="exportExcel()">Export Excel</button>
-<button class="pdf" onclick="exportPDF()">Export PDF</button>
-
-<table id="salesTable">
-<thead>
-<tr>
-<th>Customer</th>
-<th>Item</th>
-<th>Amount (₹)</th>
-<th>Invoice</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-
-</div>
-
-<script>
-
-let sales = JSON.parse(localStorage.getItem("sales")) || [];
-let purchases = JSON.parse(localStorage.getItem("purchases")) || [];
-let invoiceCounter = parseInt(localStorage.getItem("invoiceCounter")) || 1000;
-
-function saveData(){
-    localStorage.setItem("sales",JSON.stringify(sales));
-    localStorage.setItem("purchases",JSON.stringify(purchases));
-    localStorage.setItem("invoiceCounter",invoiceCounter);
-    calculateProfit();
-    displaySales();
-}
-
-function addSale(){
-    let customer=document.getElementById("customer").value;
-    let item=document.getElementById("item").value;
-    let amount=parseFloat(document.getElementById("saleAmount").value);
-
-    if(!customer||!item||!amount) return alert("Fill all fields");
-
-    sales.push({customer,item,amount});
-    saveData();
-}
-
-function addPurchase(){
-    let item=document.getElementById("purchaseItem").value;
-    let amount=parseFloat(document.getElementById("purchaseAmount").value);
-
-    if(!item||!amount) return alert("Fill all fields");
-
-    purchases.push({item,amount});
-    saveData();
-}
-
-function calculateProfit(){
-    let totalSales=sales.reduce((a,b)=>a+b.amount,0);
-    let totalPurchase=purchases.reduce((a,b)=>a+b.amount,0);
-    document.getElementById("profit").innerText=totalSales-totalPurchase;
-}
-
-function displaySales(){
-    let tbody=document.querySelector("#salesTable tbody");
-    tbody.innerHTML="";
-    sales.forEach((s,index)=>{
-        tbody.innerHTML+=`
-        <tr>
-        <td>${s.customer}</td>
-        <td>${s.item}</td>
-        <td>₹ ${s.amount}</td>
-        <td><button class="invoice-btn small-btn" onclick="generateInvoice(${index})">Generate</button></td>
-        </tr>`;
-    });
-}
-
-function exportExcel(){
-    let ws=XLSX.utils.json_to_sheet(sales);
-    let wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,"Sales");
-    XLSX.writeFile(wb,"StudioHelmetSales.xlsx");
-}
-
-async function exportPDF(){
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF();
-    doc.text("Studio Helmet Sales Report",10,10);
-    let y=20;
-    sales.forEach(s=>{
-        doc.text(`${s.customer} - ${s.item} - ₹ ${s.amount}`,10,y);
-        y+=10;
-    });
-    doc.save("SalesReport.pdf");
-}
-
 async function generateInvoice(index){
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
     invoiceCounter++;
-    let invoiceNo="INV-"+invoiceCounter;
-    let sale=sales[index];
-    let today=new Date().toLocaleDateString();
+    let invoiceNo = "INV-" + invoiceCounter;
+    let sale = sales[index];
+    let today = new Date().toLocaleDateString();
 
-    doc.setFontSize(16);
-    doc.text("Studio Helmet",20,20);
+    // Company Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("STUDIO HELMET", 20, 20);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Gandhi Road, Dehradun", 20, 28);
+    doc.text("Phone: +91 0000000000", 20, 34);
+    doc.text("GST: Not Applicable", 20, 40);
+
+    doc.line(20, 45, 190, 45);
+
+    // Invoice Details
     doc.setFontSize(12);
-    doc.text("General Trading",20,28);
+    doc.text("Invoice No: " + invoiceNo, 140, 28);
+    doc.text("Date: " + today, 140, 34);
 
-    doc.text("Invoice No: "+invoiceNo,140,20);
-    doc.text("Date: "+today,140,28);
+    doc.line(20, 50, 190, 50);
 
-    doc.line(20,35,190,35);
+    // Customer
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill To:", 20, 60);
+    doc.setFont("helvetica", "normal");
+    doc.text(sale.customer, 20, 68);
 
-    doc.text("Bill To:",20,45);
-    doc.text(sale.customer,20,52);
+    doc.line(20, 75, 190, 75);
 
-    doc.line(20,60,190,60);
+    // Table Header
+    doc.setFont("helvetica", "bold");
+    doc.text("Item", 20, 85);
+    doc.text("Amount (₹)", 150, 85);
 
-    doc.text("Item",20,70);
-    doc.text("Amount (₹)",150,70);
+    doc.line(20, 88, 190, 88);
 
-    doc.line(20,73,190,73);
+    // Table Data
+    doc.setFont("helvetica", "normal");
+    doc.text(sale.item, 20, 100);
+    doc.text("₹ " + sale.amount, 150, 100);
 
-    doc.text(sale.item,20,85);
-    doc.text("₹ "+sale.amount,150,85);
+    doc.line(20, 110, 190, 110);
 
-    doc.line(20,95,190,95);
-
+    // Total
     doc.setFontSize(14);
-    doc.text("Total: ₹ "+sale.amount,150,110);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total: ₹ " + sale.amount, 150, 125);
 
-    doc.text("Authorized Signature",20,130);
+    // Signature
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Authorized Signature", 20, 150);
+    doc.line(20, 155, 80, 155);
 
-    doc.save(invoiceNo+".pdf");
+    doc.save(invoiceNo + ".pdf");
 
     saveData();
 }
-
-calculateProfit();
-displaySales();
-
-</script>
-
-</body>
-</html>
