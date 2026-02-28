@@ -2,285 +2,242 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Studio Helmet - Trading System</title>
+<title>Aijaz Helmet Management System</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 body{
-    font-family: Arial, sans-serif;
+    font-family:Arial;
+    background:#eef2f7;
     margin:0;
-    background:#F4F7FB;
 }
 
 header{
-    background:linear-gradient(90deg,#0B5ED7,#0A58CA);
+    background:#0f172a;
     color:white;
-    padding:18px;
+    padding:15px;
     text-align:center;
     font-size:22px;
-    font-weight:bold;
+    letter-spacing:1px;
 }
 
 .container{
     padding:20px;
-    max-width:1100px;
-    margin:auto;
 }
 
-.card{
-    background:white;
-    padding:18px;
-    margin-bottom:20px;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-}
-
-h3{
-    margin-top:0;
-    color:#0B5ED7;
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
 }
 
 input{
-    padding:10px;
-    margin:6px 4px;
-    border-radius:6px;
+    padding:8px;
     border:1px solid #ccc;
-    width:200px;
+    border-radius:5px;
 }
 
 button{
-    padding:10px 14px;
+    padding:8px 12px;
     border:none;
-    border-radius:6px;
+    border-radius:5px;
     cursor:pointer;
     font-weight:bold;
-    margin:5px 4px;
-    transition:0.3s;
 }
 
-button:hover{opacity:0.85;}
-
-.primary{background:#0B5ED7;color:white;}
-.excel{background:#198754;color:white;}
-.pdf{background:#DC3545;color:white;}
-.invoice-btn{background:#6F42C1;color:white;}
-
-.profit-box{
-    background:#20C997;
-    color:white;
-    padding:18px;
-    font-size:18px;
-    font-weight:bold;
-    border-radius:10px;
-    text-align:center;
-}
+.add{background:#16a34a;color:white;}
+.excel{background:#2563eb;color:white;}
+.print{background:#9333ea;color:white;}
+.delete{background:#dc2626;color:white;}
+.pdf{background:#f97316;color:white;}
 
 table{
     width:100%;
+    margin-top:20px;
     border-collapse:collapse;
-    margin-top:10px;
+    background:white;
 }
 
 th{
-    background:#E9EEF6;
+    background:#1e293b;
+    color:white;
     padding:10px;
-    text-align:left;
 }
 
 td{
-    padding:10px;
+    padding:8px;
     border-bottom:1px solid #ddd;
+    text-align:center;
 }
 
-.small-btn{
-    padding:6px 10px;
-    font-size:12px;
+.search-box{
+    margin-top:15px;
 }
 </style>
 </head>
 
 <body>
 
-<header>Studio Helmet - General Trading System (₹ INR)</header>
+<header>Aijaz Helmet Sales & Profit System</header>
 
 <div class="container">
 
-<div class="card">
-<h3>Add Sale</h3>
-<input id="customer" placeholder="Customer Name">
-<input id="item" placeholder="Item Name">
-<input id="saleAmount" type="number" placeholder="Sale Amount (₹)">
-<button class="primary" onclick="addSale()">Add Sale</button>
+<div class="form-grid">
+<input type="text" id="customer" placeholder="Customer Name">
+<input type="text" id="phone" placeholder="Phone Number">
+<input type="text" id="product" placeholder="Helmet Model">
+<input type="number" id="purchase" placeholder="Purchase Price">
+<input type="number" id="sale" placeholder="Sale Price">
+<input type="number" id="qty" placeholder="Quantity">
 </div>
 
-<div class="card">
-<h3>Add Purchase</h3>
-<input id="purchaseItem" placeholder="Item Name">
-<input id="purchaseAmount" type="number" placeholder="Purchase Amount (₹)">
-<button class="primary" onclick="addPurchase()">Add Purchase</button>
-</div>
+<br>
 
-<div class="profit-box">
-Total Profit: ₹ <span id="profit">0</span>
-</div>
-
-<div class="card">
-<h3>Sales History</h3>
+<button class="add" onclick="addSale()">Add Entry</button>
 <button class="excel" onclick="exportExcel()">Export Excel</button>
-<button class="pdf" onclick="exportPDF()">Export PDF</button>
 
-<table id="salesTable">
+<div class="search-box">
+<input type="text" id="search" placeholder="Search Customer..." onkeyup="searchData()">
+</div>
+
+<table id="dataTable">
 <thead>
 <tr>
-<th>Customer</th>
-<th>Item</th>
-<th>Amount (₹)</th>
 <th>Invoice</th>
+<th>Customer</th>
+<th>Phone</th>
+<th>Product</th>
+<th>Purchase</th>
+<th>Sale</th>
+<th>Qty</th>
+<th>Profit/Loss</th>
+<th>PDF</th>
+<th>Delete</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
-</div>
 
 </div>
 
 <script>
-
-let sales = JSON.parse(localStorage.getItem("sales")) || [];
-let purchases = JSON.parse(localStorage.getItem("purchases")) || [];
-let invoiceCounter = parseInt(localStorage.getItem("invoiceCounter")) || 1000;
+let sales = JSON.parse(localStorage.getItem("helmetData")) || [];
+let invoiceNo = localStorage.getItem("invoiceNo") || 1;
 
 function saveData(){
-    localStorage.setItem("sales",JSON.stringify(sales));
-    localStorage.setItem("purchases",JSON.stringify(purchases));
-    localStorage.setItem("invoiceCounter",invoiceCounter);
-    calculateProfit();
-    displaySales();
+    localStorage.setItem("helmetData", JSON.stringify(sales));
+    localStorage.setItem("invoiceNo", invoiceNo);
 }
 
 function addSale(){
-    let customer=document.getElementById("customer").value;
-    let item=document.getElementById("item").value;
-    let amount=parseFloat(document.getElementById("saleAmount").value);
+    let customer = document.getElementById("customer").value;
+    let phone = document.getElementById("phone").value;
+    let product = document.getElementById("product").value;
+    let purchase = parseFloat(document.getElementById("purchase").value);
+    let sale = parseFloat(document.getElementById("sale").value);
+    let qty = parseInt(document.getElementById("qty").value);
 
-    if(!customer||!item||!amount) return alert("Fill all fields");
+    if(!customer || !purchase || !sale || !qty){
+        alert("Please fill required fields");
+        return;
+    }
 
-    sales.push({customer,item,amount});
+    let profit = (sale - purchase) * qty;
+
+    let entry = {
+        invoice:"INV"+invoiceNo,
+        customer,phone,product,purchase,sale,qty,profit
+    };
+
+    sales.push(entry);
+    invoiceNo++;
     saveData();
+    renderTable();
+    clearForm();
 }
 
-function addPurchase(){
-    let item=document.getElementById("purchaseItem").value;
-    let amount=parseFloat(document.getElementById("purchaseAmount").value);
-
-    if(!item||!amount) return alert("Fill all fields");
-
-    purchases.push({item,amount});
-    saveData();
-}
-
-function calculateProfit(){
-    let totalSales=sales.reduce((a,b)=>a+b.amount,0);
-    let totalPurchase=purchases.reduce((a,b)=>a+b.amount,0);
-    document.getElementById("profit").innerText=totalSales-totalPurchase;
-}
-
-function displaySales(){
-    let tbody=document.querySelector("#salesTable tbody");
+function renderTable(){
+    let tbody = document.querySelector("#dataTable tbody");
     tbody.innerHTML="";
-    sales.forEach((s,index)=>{
-        tbody.innerHTML+=`
+    sales.forEach((data,index)=>{
+        tbody.innerHTML += `
         <tr>
-        <td>${s.customer}</td>
-        <td>${s.item}</td>
-        <td>₹ ${s.amount}</td>
-        <td><button class="invoice-btn small-btn" onclick="generateInvoice(${index})">Generate</button></td>
+        <td>${data.invoice}</td>
+        <td>${data.customer}</td>
+        <td>${data.phone}</td>
+        <td>${data.product}</td>
+        <td>${data.purchase}</td>
+        <td>${data.sale}</td>
+        <td>${data.qty}</td>
+        <td style="color:${data.profit>=0?'green':'red'}">${data.profit}</td>
+        <td><button class="pdf" onclick='generatePDF(${JSON.stringify(data)})'>PDF</button></td>
+        <td><button class="delete" onclick="deleteEntry(${index})">X</button></td>
         </tr>`;
     });
 }
 
-function exportExcel(){
-    let ws=XLSX.utils.json_to_sheet(sales);
-    let wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,"Sales");
-    XLSX.writeFile(wb,"StudioHelmetSales.xlsx");
+function deleteEntry(index){
+    sales.splice(index,1);
+    saveData();
+    renderTable();
 }
 
-async function exportPDF(){
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF();
-    doc.text("Studio Helmet Sales Report",10,10);
-    let y=20;
-    sales.forEach(s=>{
-        doc.text(`${s.customer} - ${s.item} - ₹ ${s.amount}`,10,y);
-        y+=10;
+function clearForm(){
+    document.querySelectorAll(".form-grid input").forEach(input=>input.value="");
+}
+
+function searchData(){
+    let search = document.getElementById("search").value.toLowerCase();
+    let filtered = sales.filter(s => s.customer.toLowerCase().includes(search));
+    let tbody = document.querySelector("#dataTable tbody");
+    tbody.innerHTML="";
+    filtered.forEach((data,index)=>{
+        tbody.innerHTML += `
+        <tr>
+        <td>${data.invoice}</td>
+        <td>${data.customer}</td>
+        <td>${data.phone}</td>
+        <td>${data.product}</td>
+        <td>${data.purchase}</td>
+        <td>${data.sale}</td>
+        <td>${data.qty}</td>
+        <td>${data.profit}</td>
+        <td><button class="pdf" onclick='generatePDF(${JSON.stringify(data)})'>PDF</button></td>
+        <td></td>
+        </tr>`;
     });
-    doc.save("SalesReport.pdf");
 }
 
-async function generateInvoice(index){
-
+function generatePDF(data){
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    invoiceCounter++;
-    let invoiceNo = "INV-" + invoiceCounter;
-    let sale = sales[index];
-    let today = new Date().toLocaleDateString();
+    let doc = new jsPDF();
 
     doc.setFontSize(18);
-    doc.setFont("helvetica","bold");
-    doc.text("STUDIO HELMET",20,20);
+    doc.text("Aijaz Helmet Invoice",20,20);
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica","normal");
-    doc.text("Gandhi Road, Dehradun",20,28);
-    doc.text("Phone: +91 0000000000",20,34);
-    doc.text("GST: Not Applicable",20,40);
+    doc.setFontSize(12);
+    doc.text("Invoice No: "+data.invoice,20,40);
+    doc.text("Customer: "+data.customer,20,50);
+    doc.text("Phone: "+data.phone,20,60);
+    doc.text("Product: "+data.product,20,70);
+    doc.text("Purchase Price: "+data.purchase,20,80);
+    doc.text("Sale Price: "+data.sale,20,90);
+    doc.text("Quantity: "+data.qty,20,100);
+    doc.text("Profit/Loss: "+data.profit,20,110);
 
-    doc.text("Invoice No: "+invoiceNo,140,28);
-    doc.text("Date: "+today,140,34);
-
-    doc.line(20,45,190,45);
-
-    doc.setFont("helvetica","bold");
-    doc.text("Bill To:",20,60);
-    doc.setFont("helvetica","normal");
-    doc.text(sale.customer,20,68);
-
-    doc.line(20,75,190,75);
-
-    doc.setFont("helvetica","bold");
-    doc.text("Item",20,85);
-    doc.text("Amount (₹)",150,85);
-
-    doc.line(20,88,190,88);
-
-    doc.setFont("helvetica","normal");
-    doc.text(sale.item,20,100);
-    doc.text("₹ "+sale.amount,150,100);
-
-    doc.line(20,110,190,110);
-
-    doc.setFontSize(14);
-    doc.setFont("helvetica","bold");
-    doc.text("Total: ₹ "+sale.amount,150,125);
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica","normal");
-    doc.text("Authorized Signature",20,150);
-    doc.line(20,155,80,155);
-
-    doc.save(invoiceNo+".pdf");
-
-    saveData();
+    doc.save(data.invoice+".pdf");
 }
 
-calculateProfit();
-displaySales();
+function exportExcel(){
+    let ws = XLSX.utils.json_to_sheet(sales);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Sales");
+    XLSX.writeFile(wb,"Aijaz_Helmet_Sales.xlsx");
+}
 
+renderTable();
 </script>
 
 </body>
